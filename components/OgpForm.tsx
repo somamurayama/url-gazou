@@ -13,6 +13,7 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
 
   const handleFetch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +60,32 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
 
   const escapeHtml = (str: string) =>
     str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const generateShareUrl = () => {
+    const base = "https://url-gazou.vercel.app/preview";
+    const params = new URLSearchParams();
+    if (ogpData.title) params.set("title", ogpData.title);
+    if (ogpData.description) params.set("description", ogpData.description);
+    if (ogpData.image) params.set("image", ogpData.image);
+    if (ogpData.url) params.set("url", ogpData.url);
+    return `${base}?${params.toString()}`;
+  };
+
+  const handleCopyShare = async () => {
+    const shareUrl = generateShareUrl();
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = shareUrl;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedShare(true);
+    setTimeout(() => setCopiedShare(false), 2000);
+  };
 
   const handleCopy = async () => {
     try {
@@ -158,6 +185,23 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
           />
         </div>
+      </div>
+
+      {/* シェアURL */}
+      <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-blue-800">サムネ付きシェアURL</p>
+          <button
+            onClick={handleCopyShare}
+            className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition"
+          >
+            {copiedShare ? "コピー完了!" : "URLをコピー"}
+          </button>
+        </div>
+        <p className="text-xs text-blue-600 break-all font-mono">{generateShareUrl()}</p>
+        <p className="text-xs text-blue-500">
+          このURLをSNSに貼ると、設定した画像・タイトルがサムネとして表示されます
+        </p>
       </div>
 
       {/* OGPタグ出力 */}

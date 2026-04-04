@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 
 interface Props {
@@ -33,13 +32,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "ページが見つかりません" };
   }
 
+  const imageUrl = page.image_url?.startsWith("http") ? page.image_url : undefined;
+
   return {
     title: page.title || "シェアページ",
     description: page.description || undefined,
     openGraph: {
       title: page.title || "シェアページ",
       description: page.description || undefined,
-      images: page.image_url ? [{ url: page.image_url, width: 1200, height: 630 }] : [],
+      images: imageUrl
+        ? [{ url: imageUrl, width: 1200, height: 630, alt: page.title || "OGP image" }]
+        : undefined,
       url: `https://url-gazou.vercel.app/s/${slug}`,
       type: "website",
     },
@@ -47,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title: page.title || "シェアページ",
       description: page.description || undefined,
-      images: page.image_url ? [page.image_url] : [],
+      images: imageUrl ? [imageUrl] : undefined,
     },
   };
 }
@@ -69,41 +72,49 @@ export default async function ShortPage({ params }: Props) {
     );
   }
 
-  // original_urlがあればリダイレクト（クローラーはここに来る前にOGPタグを読む）
-  if (page.original_url) {
-    redirect(page.original_url);
-  }
-
-  // original_urlがない場合はシンプルな表示
+  // クローラーはJSを実行しないためOGPタグ（generateMetadata）を読む
+  // ブラウザはJSでoriginal_urlへリダイレクトされる
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="w-full max-w-lg">
-        {page.image_url && (
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={page.image_url}
-              alt={page.title || "OGP image"}
-              className="w-full object-cover"
-            />
-            {(page.title || page.description) && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-5 py-4">
-                {page.title && (
-                  <p className="text-white font-bold text-lg leading-tight">{page.title}</p>
-                )}
-                {page.description && (
-                  <p className="text-white/80 text-sm mt-1">{page.description}</p>
-                )}
-              </div>
+    <>
+      {page.original_url && (
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.location.replace(${JSON.stringify(page.original_url)});`,
+          }}
+        />
+      )}
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-full max-w-lg">
+          {page.image_url && (
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={page.image_url}
+                alt={page.title || "OGP image"}
+                className="w-full object-cover"
+              />
+              {(page.title || page.description) && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-5 py-4">
+                  {page.title && (
+                    <p className="text-white font-bold text-lg leading-tight">{page.title}</p>
+                  )}
+                  {page.description && (
+                    <p className="text-white/80 text-sm mt-1">{page.description}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          <div className="mt-4 text-center">
+            <p className="text-gray-500 text-sm">リダイレクト中...</p>
+            {page.original_url && (
+              <a href={page.original_url} className="text-xs text-gray-600 hover:text-gray-400 underline mt-1 block">
+                自動で移動しない場合はこちら
+              </a>
             )}
           </div>
-        )}
-        <div className="mt-4 text-center">
-          <a href="/" className="text-xs text-gray-500 hover:text-gray-300 transition">
-            OGP確認・編集ツール
-          </a>
         </div>
       </div>
-    </div>
+    </>
   );
 }

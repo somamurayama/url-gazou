@@ -13,25 +13,22 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareError, setShareError] = useState("");
   const [copiedShare, setCopiedShare] = useState(false);
 
   const handleFetch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) return;
-
     setLoading(true);
     setError("");
-
     try {
       const res = await fetch(`/api/ogp?url=${encodeURIComponent(url.trim())}`);
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "OGPの取得に失敗しました");
-        return;
-      }
-
+      if (!res.ok) { setError(data.error || "OGPの取得に失敗しました"); return; }
       onChange(data as OgpData);
+      setShareUrl(""); // OGP変更時はシェアURLをリセット
     } catch {
       setError("ネットワークエラーが発生しました");
     } finally {
@@ -41,41 +38,35 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
 
   const handleChange = (field: keyof OgpData, value: string) => {
     onChange({ ...ogpData, [field]: value });
+    setShareUrl(""); // 編集したらリセット
   };
 
-  const generateMetaTags = () => {
-    return `<!-- OGP Meta Tags -->
-<meta property="og:title" content="${escapeHtml(ogpData.title)}" />
-<meta property="og:description" content="${escapeHtml(ogpData.description)}" />
-<meta property="og:image" content="${escapeHtml(ogpData.image)}" />
-<meta property="og:url" content="${escapeHtml(ogpData.url)}" />
-<meta property="og:type" content="website" />
-
-<!-- Twitter Card -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="${escapeHtml(ogpData.title)}" />
-<meta name="twitter:description" content="${escapeHtml(ogpData.description)}" />
-<meta name="twitter:image" content="${escapeHtml(ogpData.image)}" />`;
-  };
-
-  const escapeHtml = (str: string) =>
-    str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-  const generateShareUrl = () => {
-    const payload: Record<string, string> = {};
-    if (ogpData.title) payload.t = ogpData.title;
-    if (ogpData.description) payload.d = ogpData.description;
-    if (ogpData.image) payload.i = ogpData.image;
-    if (ogpData.url) payload.u = ogpData.url;
-    const slug = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-    return `https://url-gazou.vercel.app/s/${slug}`;
+  const handleGenerateShareUrl = async () => {
+    setShareLoading(true);
+    setShareError("");
+    try {
+      const res = await fetch("/api/save-ogp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: ogpData.title,
+          description: ogpData.description,
+          image_url: ogpData.image,
+          original_url: ogpData.url,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setShareError(data.error || "URL生成に失敗しました"); return; }
+      setShareUrl(data.url);
+    } catch {
+      setShareError("ネットワークエラーが発生しました");
+    } finally {
+      setShareLoading(false);
+    }
   };
 
   const handleCopyShare = async () => {
-    const shareUrl = generateShareUrl();
+    if (!shareUrl) return;
     try {
       await navigator.clipboard.writeText(shareUrl);
     } catch {
@@ -90,22 +81,35 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
     setTimeout(() => setCopiedShare(false), 2000);
   };
 
+  const escapeHtml = (str: string) =>
+    str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const generateMetaTags = () => `<!-- OGP Meta Tags -->
+<meta property="og:title" content="${escapeHtml(ogpData.title)}" />
+<meta property="og:description" content="${escapeHtml(ogpData.description)}" />
+<meta property="og:image" content="${escapeHtml(ogpData.image)}" />
+<meta property="og:url" content="${escapeHtml(ogpData.url)}" />
+<meta property="og:type" content="website" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="${escapeHtml(ogpData.title)}" />
+<meta name="twitter:description" content="${escapeHtml(ogpData.description)}" />
+<meta name="twitter:image" content="${escapeHtml(ogpData.image)}" />`;
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(generateMetaTags());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback
       const ta = document.createElement("textarea");
       ta.value = generateMetaTags();
       document.body.appendChild(ta);
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -138,9 +142,7 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
       {/* 編集フォーム */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            og:title
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">og:title</label>
           <input
             type="text"
             value={ogpData.title}
@@ -149,11 +151,8 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
           />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            og:description
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">og:description</label>
           <textarea
             value={ogpData.description}
             onChange={(e) => handleChange("description", e.target.value)}
@@ -162,11 +161,8 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition resize-none"
           />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            og:image
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">og:image</label>
           <input
             type="url"
             value={ogpData.image}
@@ -175,11 +171,8 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
           />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            og:url
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">og:url（元のURL）</label>
           <input
             type="url"
             value={ogpData.url}
@@ -190,28 +183,45 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
         </div>
       </div>
 
-      {/* シェアURL */}
-      <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
+      {/* シェアURL生成 */}
+      <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-blue-800">サムネ付きシェアURL</p>
+          <div>
+            <p className="text-sm font-medium text-blue-800">サムネ付きシェアURL</p>
+            <p className="text-xs text-blue-500 mt-0.5">
+              SNSに貼ると画像・タイトルがサムネとして表示されます
+            </p>
+          </div>
           <button
-            onClick={handleCopyShare}
-            className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition"
+            onClick={handleGenerateShareUrl}
+            disabled={shareLoading || (!ogpData.title && !ogpData.image)}
+            className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition whitespace-nowrap"
           >
-            {copiedShare ? "コピー完了!" : "URLをコピー"}
+            {shareLoading ? "生成中..." : "URLを生成"}
           </button>
         </div>
-        <p className="text-xs text-blue-500 mt-2">
-          SNSに貼ると、設定した画像・タイトルがサムネとして表示されます
-        </p>
+
+        {shareError && (
+          <p className="text-xs text-red-600">{shareError}</p>
+        )}
+
+        {shareUrl && (
+          <div className="flex items-center gap-2 bg-white rounded-lg border border-blue-200 px-3 py-2">
+            <span className="flex-1 text-sm text-blue-700 font-mono truncate">{shareUrl}</span>
+            <button
+              onClick={handleCopyShare}
+              className="flex-shrink-0 rounded-md bg-blue-600 hover:bg-blue-700 px-3 py-1 text-xs font-medium text-white transition"
+            >
+              {copiedShare ? "コピー完了!" : "コピー"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* OGPタグ出力 */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium text-gray-700">
-            生成されたOGPタグ
-          </label>
+          <label className="text-sm font-medium text-gray-700">生成されたOGPタグ</label>
           <button
             onClick={handleCopy}
             className="rounded-lg bg-gray-100 hover:bg-gray-200 px-4 py-1.5 text-sm font-medium text-gray-700 transition"

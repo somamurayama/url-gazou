@@ -1,112 +1,105 @@
 import type { Metadata } from "next";
-
-const BASE_URL = "https://url-gazou.vercel.app";
+import { redirect } from "next/navigation";
+import { getSupabase } from "@/lib/supabase";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-interface OgpPayload {
-  t?: string; // title
-  d?: string; // description
-  i?: string; // image
-  u?: string; // url
+interface OgpPage {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  original_url: string;
 }
 
-function decode(slug: string): OgpPayload {
-  try {
-    const json = Buffer.from(slug, "base64url").toString("utf-8");
-    return JSON.parse(json) as OgpPayload;
-  } catch {
-    return {};
-  }
+async function fetchOgpPage(id: string): Promise<OgpPage | null> {
+  const { data, error } = await getSupabase()
+    .from("ogp_pages")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return null;
+  return data as OgpPage;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const d = decode(slug);
-  const title = d.t || "";
-  const description = d.d || "";
-  const image = d.i || "";
-  const url = d.u || BASE_URL;
+  const page = await fetchOgpPage(slug);
+
+  if (!page) {
+    return { title: "ページが見つかりません" };
+  }
 
   return {
-    title: title || "OGPプレビュー",
-    description: description || undefined,
+    title: page.title || "シェアページ",
+    description: page.description || undefined,
     openGraph: {
-      title: title || "OGPプレビュー",
-      description: description || undefined,
-      images: image ? [{ url: image, width: 1200, height: 630 }] : [],
-      url,
+      title: page.title || "シェアページ",
+      description: page.description || undefined,
+      images: page.image_url ? [{ url: page.image_url, width: 1200, height: 630 }] : [],
+      url: `https://url-gazou.vercel.app/s/${slug}`,
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: title || "OGPプレビュー",
-      description: description || undefined,
-      images: image ? [image] : [],
+      title: page.title || "シェアページ",
+      description: page.description || undefined,
+      images: page.image_url ? [page.image_url] : [],
     },
   };
 }
 
 export default async function ShortPage({ params }: Props) {
   const { slug } = await params;
-  const d = decode(slug);
-  const title = d.t || "";
-  const description = d.d || "";
-  const image = d.i || "";
-  const url = d.u || "";
+  const page = await fetchOgpPage(slug);
 
+  if (!page) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-3">
+          <p className="text-gray-500 text-sm">ページが見つかりません</p>
+          <a href="/" className="text-blue-600 text-sm hover:underline">
+            OGP確認・編集ツールに戻る
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // original_urlがあればリダイレクト（クローラーはここに来る前にOGPタグを読む）
+  if (page.original_url) {
+    redirect(page.original_url);
+  }
+
+  // original_urlがない場合はシンプルな表示
   return (
     <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="relative w-full max-w-lg">
-        {/* 画像メイン */}
-        {image ? (
+      <div className="w-full max-w-lg">
+        {page.image_url && (
           <div className="relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={image}
-              alt={title || "OGP image"}
+              src={page.image_url}
+              alt={page.title || "OGP image"}
               className="w-full object-cover"
             />
-            {/* タイトルオーバーレイ */}
-            {(title || description) && (
+            {(page.title || page.description) && (
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-5 py-4">
-                {title && (
-                  <p className="text-white font-bold text-lg leading-tight">{title}</p>
+                {page.title && (
+                  <p className="text-white font-bold text-lg leading-tight">{page.title}</p>
                 )}
-                {description && (
-                  <p className="text-white/80 text-sm mt-1 leading-snug">{description}</p>
+                {page.description && (
+                  <p className="text-white/80 text-sm mt-1">{page.description}</p>
                 )}
               </div>
             )}
           </div>
-        ) : (
-          <div className="bg-gray-900 aspect-video flex flex-col items-center justify-center gap-3 rounded-xl">
-            {title && <p className="text-white font-bold text-xl text-center px-6">{title}</p>}
-            {description && <p className="text-white/70 text-sm text-center px-6">{description}</p>}
-            {!title && !description && (
-              <p className="text-gray-500 text-sm">画像が設定されていません</p>
-            )}
-          </div>
         )}
-
-        {/* 元URL遷移リンク（小さく） */}
-        {url && (
-          <div className="mt-3 text-center">
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-gray-400 hover:text-gray-200 underline underline-offset-2 transition"
-            >
-              元のページを開く
-            </a>
-          </div>
-        )}
-
         <div className="mt-4 text-center">
-          <a href="/" className="text-xs text-gray-600 hover:text-gray-400 transition">
+          <a href="/" className="text-xs text-gray-500 hover:text-gray-300 transition">
             OGP確認・編集ツール
           </a>
         </div>

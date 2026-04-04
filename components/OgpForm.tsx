@@ -62,13 +62,16 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
     str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   const generateShareUrl = () => {
-    const base = "https://url-gazou.vercel.app/preview";
-    const params = new URLSearchParams();
-    if (ogpData.title) params.set("title", ogpData.title);
-    if (ogpData.description) params.set("description", ogpData.description);
-    if (ogpData.image) params.set("image", ogpData.image);
-    if (ogpData.url) params.set("url", ogpData.url);
-    return `${base}?${params.toString()}`;
+    const payload: Record<string, string> = {};
+    if (ogpData.title) payload.t = ogpData.title;
+    if (ogpData.description) payload.d = ogpData.description;
+    if (ogpData.image) payload.i = ogpData.image;
+    if (ogpData.url) payload.u = ogpData.url;
+    const slug = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+    return `https://url-gazou.vercel.app/s/${slug}`;
   };
 
   const handleCopyShare = async () => {

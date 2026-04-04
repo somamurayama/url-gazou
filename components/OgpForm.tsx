@@ -191,7 +191,7 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
       </div>
 
       {/* シェアURL */}
-      <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 space-y-2">
+      <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-blue-800">サムネ付きシェアURL</p>
           <button
@@ -201,9 +201,8 @@ export default function OgpForm({ ogpData, onChange }: OgpFormProps) {
             {copiedShare ? "コピー完了!" : "URLをコピー"}
           </button>
         </div>
-        <p className="text-xs text-blue-600 break-all font-mono">{generateShareUrl()}</p>
-        <p className="text-xs text-blue-500">
-          このURLをSNSに貼ると、設定した画像・タイトルがサムネとして表示されます
+        <p className="text-xs text-blue-500 mt-2">
+          SNSに貼ると、設定した画像・タイトルがサムネとして表示されます
         </p>
       </div>
 

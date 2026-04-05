@@ -26,13 +26,13 @@ export default function Home() {
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-bold">
-            OGP
+            URL
           </div>
           <div>
             <h1 className="text-base font-bold text-gray-900 leading-tight">
-              OGP確認・編集ツール
+              リンクのサムネ・画像を変更するツール
             </h1>
-            <p className="text-xs text-gray-500">URLからOGPメタデータを取得・編集</p>
+            <p className="text-xs text-gray-500">URLを入力するだけで簡単設定</p>
           </div>
         </div>
       </header>
@@ -41,11 +41,10 @@ export default function Home() {
         {/* ヒーロー */}
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-gray-900 mb-3">
-            OGPメタデータを確認・編集
+            リンクのサムネイル画像を変更
           </h2>
           <p className="text-gray-600 max-w-xl mx-auto text-sm leading-relaxed">
-            URLを入力してOGPタグを取得。内容を編集して X・Facebook・LINE の
-            シェアプレビューをリアルタイムで確認できます。
+            リンクのサムネイル画像やタイトルを自由に変更できるツール。URLを入力するだけで簡単設定。
           </p>
         </div>
 

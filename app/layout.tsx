@@ -2,24 +2,24 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OGP確認・編集ツール | URLからOGPメタデータを取得・編集",
+  title: "リンクのサムネ・画像を変更するツール | URL画像設定",
   description:
-    "URLを入力するだけでOGP（Open Graph Protocol）メタデータを取得・編集できるツール。X(Twitter)・Facebook・LINEのプレビューカードをリアルタイムで確認し、画像アップロードやメタタグのコピーも可能。",
-  keywords: ["OGP", "Open Graph", "SEO", "メタタグ", "OGP確認", "OGP編集"],
+    "LINEやXでシェアしたときのサムネイル画像やタイトルを自由に変更できるツール。URLを入力するだけで簡単設定。",
+  keywords: ["サムネイル変更", "リンク画像変更", "LINE サムネ", "Twitter カード", "OGP", "URLプレビュー画像"],
   openGraph: {
-    title: "OGP確認・編集ツール",
+    title: "リンクのサムネ・画像を変更するツール",
     description:
-      "URLを入力してOGPメタデータを取得・編集。X・Facebook・LINEのプレビューをリアルタイム確認。",
+      "LINEやXでシェアしたときのサムネイル画像やタイトルを自由に変更できるツール。URLを入力するだけで簡単設定。",
     url: "https://url-gazou.vercel.app",
-    siteName: "OGP確認・編集ツール",
+    siteName: "リンクのサムネ・画像を変更するツール",
     locale: "ja_JP",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "OGP確認・編集ツール",
+    title: "リンクのサムネ・画像を変更するツール",
     description:
-      "URLを入力してOGPメタデータを取得・編集。X・Facebook・LINEのプレビューをリアルタイム確認。",
+      "LINEやXでシェアしたときのサムネイル画像やタイトルを自由に変更できるツール。URLを入力するだけで簡単設定。",
   },
   robots: {
     index: true,

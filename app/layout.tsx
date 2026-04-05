@@ -4,12 +4,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "リンクのサムネ・画像を変更するツール | URL画像設定",
   description:
-    "LINEやXでシェアしたときのサムネイル画像やタイトルを自由に変更できるツール。URLを入力するだけで簡単設定。",
+    "リンクのサムネイル画像やタイトルを自由に変更できるツール。URLを入力するだけで簡単設定。",
   keywords: ["サムネイル変更", "リンク画像変更", "LINE サムネ", "Twitter カード", "OGP", "URLプレビュー画像"],
   openGraph: {
     title: "リンクのサムネ・画像を変更するツール",
     description:
-      "LINEやXでシェアしたときのサムネイル画像やタイトルを自由に変更できるツール。URLを入力するだけで簡単設定。",
+      "リンクのサムネイル画像やタイトルを自由に変更できるツール。URLを入力するだけで簡単設定。",
     url: "https://url-gazou.vercel.app",
     siteName: "リンクのサムネ・画像を変更するツール",
     locale: "ja_JP",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "リンクのサムネ・画像を変更するツール",
     description:
-      "LINEやXでシェアしたときのサムネイル画像やタイトルを自由に変更できるツール。URLを入力するだけで簡単設定。",
+      "リンクのサムネイル画像やタイトルを自由に変更できるツール。URLを入力するだけで簡単設定。",
   },
   robots: {
     index: true,
